@@ -1,0 +1,6 @@
+python-time
+telegram_send
+random2
+datetime
+python-telegram-bot
+py-tgcalls==0.5.5
