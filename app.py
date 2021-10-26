@@ -25,10 +25,12 @@ ME = str(os.getenv("HEROKU_APP_NAME"))
 diferencia = timedelta(hours=-3)
 zona_horaria = timezone(diferencia)
 
-# Constants
-finde = datetime.datetime.now().today().astimezone(zona_horaria).weekday() > 4
-hoy = datetime.datetime.now().today().astimezone(zona_horaria).strftime("%d/%m/%Y")
-feriado = hoy in msg.feriados_2021
+# Set Constants
+def setConstants():
+    finde = datetime.datetime.now().today().astimezone(zona_horaria).weekday() > 4
+    hoy = datetime.datetime.now().today().astimezone(zona_horaria).strftime("%d/%m/%Y")
+    feriado = hoy in msg.feriados_2021
+    return (finde, hoy, feriado)
 
 # Aux Func
 def me_llaman(message):
@@ -61,10 +63,10 @@ def feedback_message_selector():
     g = random.randint(0, 319)
     lunes = datetime.datetime.now().today().astimezone(zona_horaria).weekday() == 0
     viernes = datetime.datetime.now().today().astimezone(zona_horaria).weekday() == 4
-    mmj = not (finde or lunes or viernes)
+    mmj = not (setConstants()[0] or lunes or viernes)
     condicion = (g%2 == 0 and not mmj)
     if condicion:
-        if finde:
+        if setConstants()[0]:
             f = random.randint(0, len(msg.finde_feedbacks)- 1)
             return msg.finde_feedbacks[f]
         if lunes:
@@ -166,10 +168,10 @@ def ee6(message, context):
     context.bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=msg.ee6_rta)
 
 def ee7(message, context):
-    if finde:
+    if setConstants()[0]:
         t = random.randint(0, len(msg.ee7_finde_response) - 1)
         context.bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=f"{msg.ee7_finde_response[t]}")
-    elif feriado:
+    elif setConstants()2]:
         context.bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=msg.ee7_feriado_response)
     else:
         s = random.randint(0, len(msg.ee7_response) - 1)
@@ -190,7 +192,7 @@ def start(update, context):
         name = update.effective_user['first_name']
         update.message.reply_text(f"Hola {name}")
         return
-    i = random.randint(0, len(msg.welcomeMessages)-2) if (not finde) else random.randint(0, len(msg.welcomeMessages)-1)
+    i = random.randint(0, len(msg.welcomeMessages)-2) if (not setConstants()[0]) else random.randint(0, len(msg.welcomeMessages)-1)
     update.message.reply_text(f"{msg.welcomeMessages[i]}")
 
 def help(update, context):
@@ -201,7 +203,7 @@ def help(update, context):
     if random_estoy_de_paro():
         context.bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=msg.caida_del_bot)
         return
-    j = random.randint(0, len(msg.helpMessages) - 3) if (not finde) else random.randint(0, len(msg.helpMessages) - 1)
+    j = random.randint(0, len(msg.helpMessages) - 3) if (not setConstants()[0]) else random.randint(0, len(msg.helpMessages) - 1)
     context.bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=f"{msg.helpMessages[j]}")
 
 def at_cry(update, context):
@@ -314,31 +316,34 @@ def feedback(update, context):
 
 # Recordatorios
 def reminder1(context):
-    if not finde and not feriado:
+    if not setConstants()[0] and not setConstants()[2]:
         d = random.randint(0, len(msg.r1_texts) - 1)
         context.bot.send_message(chat_id=context.job.context, parse_mode="HTML", text=f"{msg.r1_texts[d]}")
     else:
-        if finde and feriado:
+        if setConstants()[0] and setConstants()[2]:
             logger.info(msg.finde_y_feriado)
-        elif finde:
+        elif setConstants()[0]:
             logger.info(msg.hoy_es_finde)
         else:
             logger.info(msg.hoy_es_feriado)
 
 def reminder2(context):
-    if not finde and not feriado:
+    if not setConstants()[0] and not setConstants()[2]:
         context.bot.send_message(chat_id=context.job.context, parse_mode="HTML", text=msg.text_to_send)
         context.bot.send_animation(chat_id=context.job.context, animation=GIF)
     else:
-        if finde and feriado:
+        if setConstants()[0] and setConstants()[2]:
             logger.info(msg.finde_y_feriado)
-        elif finde:
+        elif setConstants()[0]:
             logger.info(msg.hoy_es_finde)
         else:
             logger.info(msg.hoy_es_feriado)
 
 # Jobs
 def statusChecker(context: telegram.ext.CallbackContext):
+    finde = setConstants()[0]
+    hoy = setConstants()[1]
+    feriado = setConstants()[2]
     logger.info(f"FINDE => {finde}; HOY=> {hoy}; FERIADO => {feriado}")
     logger.info("Fecha y hora loggueo: " + str(datetime.datetime.now().today().astimezone(zona_horaria)))
     div = msg.checkerDiv
